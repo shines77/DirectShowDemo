@@ -7,9 +7,14 @@
 #include <vector>
 
 #if 1
+//#pragma comment(lib, "winmm.lib")
+//#pragma comment(lib, "legacy_stdio_definitions.lib")
+
 #ifdef _DEBUG
+//#pragma comment(lib, "vcruntimed.lib")
 #pragma comment(lib, "strmbased.lib")
 #else
+//#pragma comment(lib, "vcruntime.lib")
 #pragma comment(lib, "strmbase.lib")
 #endif
 #pragma comment(lib, "strmiids.lib")
@@ -24,57 +29,102 @@
 #define UVC_STOP_RECORD         2
 #define UVC_STOP_LOCAL_VIDEO    3
 
+struct CamVideoConfig
+{
+	SIZE InputSize;
+    SIZE MinOutputSize;
+    SIZE MaxOutputSize;
+    double MinFPS;
+    double MaxFPS;
+    ULONG cbFormat;
+	int FormatIndex;
+ 
+	CamVideoConfig() {
+		InputSize.cx = 0;
+        InputSize.cy = 0;
+        MinOutputSize.cx = 0;
+        MinOutputSize.cy = 0;
+        MaxOutputSize.cx = 0;
+        MaxOutputSize.cy = 0;
+        MinFPS = 0.0;
+        MaxFPS = 0.0;
+        cbFormat = -1;
+		FormatIndex = -1;
+	}
+
+	CamVideoConfig(const CamVideoConfig & other) {
+		*this = other;
+	}
+
+	CamVideoConfig & operator = (const CamVideoConfig & other) {
+		InputSize = other.InputSize;
+		MinOutputSize = other.MinOutputSize;
+        MaxOutputSize = other.MaxOutputSize;
+        MinFPS = other.MinFPS;
+        MaxFPS = other.MaxFPS;
+        cbFormat = other.cbFormat;
+		FormatIndex = other.FormatIndex;
+		return *this;
+	}
+};
+
 class DShowCapture
 {
 public:
     DShowCapture(HWND hwndPreview = NULL);
     ~DShowCapture(void);
 
-    std::vector<std::string> mDeviceNameList;
+    std::vector<std::string> videoDeviceList_;
+    std::vector<std::string> audioDeviceList_;
+
+    std::vector<CamVideoConfig> videoConfigures_;
+    std::vector<int>               videoFPSList_;
+
+    static const int kFrameIntervalPerSecond = 10000000;
 
     HRESULT Init();
 
     HWND SetPreviewHwnd(HWND hwndPreview, bool bAttachTo = false);
     bool AttachToVideoWindow(HWND hwndPreview);
 
-    // 可调用函数：枚举视频采集设备,返回设备数量
+    int ListVideoConfigures();
+
+    // 枚举视频采集设备, 返回设备数量
     int ListVideoDevices();
 
-    // 可调用函数：枚举音频采集设备
-    BOOL ListAudioDevices();
+    // 枚举音频采集设备
+    int ListAudioDevices();
 
-    // 可调用函数：枚举视频压缩格式
-    BOOL ListVideoCompressFormat();
+    // 枚举视频压缩格式
+    int ListVideoCompressFormat();
 
-    // 可调用函数：枚举音频压缩格式
-    BOOL ListAudioCompressFormat();
+    // 枚举音频压缩格式
+    int ListAudioCompressFormat();
 
-    // 可调用函数：根据选择的设备创建Video Capture Filter
+    // 根据选择的设备创建 Video Capture Filter
     bool CreateVideoFilter(const char * selectedDevice = NULL);
 
-    // 可调用函数：操作视频
+    // 渲染预览窗口
     bool Render(int mode, TCHAR * videoPath = NULL,
                 const char * selectedDevice = NULL);
 
-    // 可调用函数：停止当前操作
+    // 停止当前操作
     bool StopCurrentOperating(int _stop_type = 0);
 
-    // 可调用函数：暂停播放本地视频
+    // 暂停播放本地视频
     bool PausePlayingLocalVideo();
 
-    // 可调用函数：继续播放本地视频
+    // 继续播放本地视频
     bool ContinuePlayingLocalVideo();
 
 private:
     HWND                    hwndPreview_;           // 预览窗口句柄
 
-    IGraphBuilder *         pVideoFilterGraph_;     // Video filter graph (管理器)
-    ICaptureGraphBuilder2 * pVideoCaptureGraph_;    // Video capture graph (管理器)
+    IGraphBuilder *         pFilterGraph_;          // filter graph (Manager)
+    ICaptureGraphBuilder2 * pCaptureBuilder_;       // capture graph (Builder)
     IBaseFilter *           pVideoFilter_;          // Video filter
     IBaseFilter *           pVideoMux_;             // Video file muxer (用于保存视频文件)
     IVideoWindow *          pVideoWindow_;          // 视频播放窗口
     IMediaControl *         pVideoMediaControl_;    // 摄像头流媒体的控制开关（控制其开始、暂停、结束）
     IMediaEvent *           pVideoMediaEvent_;      // 摄像头流媒体的控制事件
-
 };
-

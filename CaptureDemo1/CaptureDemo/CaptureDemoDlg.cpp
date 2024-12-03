@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "CaptureDemo.h"
 #include "CaptureDemoDlg.h"
-#include "afxdialogex.h"
+#include <AfxDialogEx.h>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -46,7 +46,7 @@ END_MESSAGE_MAP()
 // CCaptureDemoDlg 对话框
 
 CCaptureDemoDlg::CCaptureDemoDlg(CWnd* pParent /* = NULL */)
-	: CDialogEx(IDD_CAPTUREDEMO1_DIALOG, pParent)
+	: CDialogEx(IDD_CAPTUREDEMO_DIALOG, pParent)
 {
     CoInitialize(NULL);   // 初始化 COM 库
 
@@ -65,15 +65,16 @@ CCaptureDemoDlg::~CCaptureDemoDlg()
 void CCaptureDemoDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
-    DDX_Control(pDX, IDC_DEVICELIST, m_DeviceList);
-    DDX_Control(pDX, IDC_CAMERA_PREVIEW, m_CameraPreview);
+    DDX_Control(pDX, IDC_CAMERA_PREVIEW, m_wndCameraPreview);
+    DDX_Control(pDX, IDC_VIDEO_DEVICE_LIST, m_cbxVideoDeviceList);
+    DDX_Control(pDX, IDC_AUDIO_DEVICE_LIST, m_cbxAudioDeviceList);
 }
 
 BEGIN_MESSAGE_MAP(CCaptureDemoDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-    ON_CBN_SELCHANGE(IDC_DEVICELIST, &CCaptureDemoDlg::OnCbnSelchangeDeviceList)
+    ON_CBN_SELCHANGE(IDC_DEVICELIST, &CCaptureDemoDlg::OnCbnSelChangeVideoDeviceList)
 END_MESSAGE_MAP()
 
 // CCaptureDemo1Dlg 消息处理程序
@@ -107,33 +108,56 @@ BOOL CCaptureDemoDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
-    int default_selected = -1;
-    std::string selected_device;
-
 	if (camera_ == NULL) {
         camera_ = new DShowCapture;
         if (camera_ != NULL) {
             camera_->Init();
-            camera_->SetPreviewHwnd(m_CameraPreview.GetSafeHwnd());
-            int nDeviceCount = camera_->ListVideoDevices();
-            for (int i = 0; i < nDeviceCount; i++) {
-                const std::string & deviceName = camera_->mDeviceNameList[i];
-                std::tstring deviceNameW = Ansi2Unicode(deviceName);
-                if (deviceName == "HD WebCam") {
-                    default_selected = i;
-                    selected_device = deviceName;
-                }               
-                m_DeviceList.AddString(deviceNameW.c_str());
-            }
+            camera_->SetPreviewHwnd(m_wndCameraPreview.GetSafeHwnd());
+
+            EnumVideoDeviceList();
+            EnumAudioDeviceList();
+
+            camera_->ListVideoConfigures();
         }
     }
 
-    if (default_selected != -1) {
-        m_DeviceList.SetCurSel(default_selected);
-        OnCbnSelchangeDeviceList();
+	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
+}
+
+int CCaptureDemoDlg::EnumVideoDeviceList()
+{
+    int nDeviceCount = 0;
+    int default_selected = -1;
+    std::string selected_device;
+
+    if (camera_ != NULL) {
+        nDeviceCount = camera_->ListVideoDevices();
+        if (nDeviceCount > 0) {
+            m_cbxVideoDeviceList.Clear();
+        }
+        for (int i = 0; i < nDeviceCount; i++) {
+            const std::string & deviceName = camera_->videoDeviceList_[i];
+            std::tstring deviceNameW = Ansi2Unicode(deviceName);
+            if (deviceName == "HD WebCam") {
+                default_selected = i;
+                selected_device = deviceName;
+            }               
+            m_cbxVideoDeviceList.AddString(deviceNameW.c_str());
+        }
     }
 
-	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
+    if (default_selected == -1)
+        default_selected = 0;
+
+    m_cbxVideoDeviceList.SetCurSel(default_selected);
+    OnCbnSelChangeVideoDeviceList();
+
+    return nDeviceCount;
+}
+
+int CCaptureDemoDlg::EnumAudioDeviceList()
+{
+    return -1;
 }
 
 void CCaptureDemoDlg::OnSysCommand(UINT nID, LPARAM lParam)
@@ -178,21 +202,20 @@ void CCaptureDemoDlg::OnPaint()
 	}
 }
 
-//当用户拖动最小化窗口时系统调用此函数取得光标
-//显示。
+// 当用户拖动最小化窗口时系统调用此函数取得光标显示。
 HCURSOR CCaptureDemoDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-void CCaptureDemoDlg::OnCbnSelchangeDeviceList()
+void CCaptureDemoDlg::OnCbnSelChangeVideoDeviceList()
 {
-    int selected_idx = m_DeviceList.GetCurSel();
+    int selected_idx = m_cbxVideoDeviceList.GetCurSel();
     if (selected_idx < 0)
         return;
 
     CString name;
-    m_DeviceList.GetWindowText(name);
+    m_cbxVideoDeviceList.GetWindowText(name);
     std::tstring deviceNameW = name.GetBuffer();
     if (deviceNameW.empty()) {
         return;

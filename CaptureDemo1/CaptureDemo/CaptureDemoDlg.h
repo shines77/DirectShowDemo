@@ -17,7 +17,7 @@ public:
 
 // 对话框数据
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_CAPTUREDEMO1_DIALOG };
+	enum { IDD = IDD_CAPTUREDEMO_DIALOG };
 #endif
 
 	protected:
@@ -32,13 +32,16 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
-    afx_msg void OnCbnSelchangeDeviceList();
+    afx_msg void OnCbnSelChangeVideoDeviceList();
 	DECLARE_MESSAGE_MAP()
+
+    int EnumVideoDeviceList();
+    int EnumAudioDeviceList();
 
 private:
     DShowCapture * camera_;
 
-    CComboBox m_DeviceList;
-    CStatic m_CameraPreview;
-    
+    CStatic     m_wndCameraPreview;
+    CComboBox   m_cbxVideoDeviceList;
+    CComboBox   m_cbxAudioDeviceList;
 };
