@@ -65,8 +65,5 @@
     <Image Include="res\CaptureDemo.ico">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="res\CaptureDemo1.ico">
-      <Filter>资源文件</Filter>
-    </Image>
   </ItemGroup>
 </Project>
