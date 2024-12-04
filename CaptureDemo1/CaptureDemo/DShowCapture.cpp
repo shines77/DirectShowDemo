@@ -43,7 +43,7 @@ HRESULT DShowCapture::Init()
     hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&pFilterGraph_);
 	if (FAILED(hr))
 		return hr;
-    
+
     // 创建 capture graph manager
     SAFE_INTERFACE_RELEASE(pCaptureBuilder_);
     hr = CoCreateInstance(CLSID_CaptureGraphBuilder2, NULL, CLSCTX_INPROC_SERVER,
@@ -120,12 +120,12 @@ int DShowCapture::ListVideoConfigures()
 		videoConfigures_.clear();
 		IAMStreamConfig * pStreamConfig = NULL;
 		// &MEDIATYPE_Video, 如果包括其他媒体类型, 第二个参数设置为 NULL, 表示 Any media type.
-		HRESULT hr = pCaptureBuilder_->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video, 
+		HRESULT hr = pCaptureBuilder_->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video,
 										             pVideoFilter_, IID_IAMStreamConfig, (void **)&pStreamConfig);
         if (FAILED(hr)) {
             return -1;
         }
- 
+
 		int nCount = 0, nSize = 0;
 		hr = pStreamConfig->GetNumberOfCapabilities(&nCount, &nSize);
         if (FAILED(hr)) {
@@ -219,7 +219,7 @@ int DShowCapture::ListVideoDevices()
                 }
                 else {
                     OutputDebugString(_T("BindToObject Failed\n"));
-                }                
+                }
             }
             pPropBag->Release();
         }
